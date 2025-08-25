@@ -3,11 +3,11 @@ GOPATH:=$(shell go env GOPATH)
 VERSION=$(shell git describe --tags --always)
 
 ifeq ($(GOHOSTOS), windows)
-	INTERNAL_PROTO_FILES=
-	API_PROTO_FILES=api/helloworld/v1/error_reason.proto api/helloworld/v1/greeter.proto api/review/v1/review.proto api/review/v1/review_error.proto
+    INTERNAL_PROTO_FILES=internal/conf/conf.proto
+    API_PROTO_FILES=api/helloworld/v1/error_reason.proto api/helloworld/v1/greeter.proto api/review/v1/review.proto api/review/v1/review_error.proto
 else
-	INTERNAL_PROTO_FILES=$(shell find internal -name *.proto)
-	API_PROTO_FILES=$(shell find api -name *.proto)
+    INTERNAL_PROTO_FILES=$(shell find internal -name *.proto)
+    API_PROTO_FILES=$(shell find api -name *.proto)
 endif
 
 .PHONY: init

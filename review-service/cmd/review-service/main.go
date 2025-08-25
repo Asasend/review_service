@@ -47,7 +47,7 @@ func newApp(logger log.Logger, r registry.Registrar, gs *grpc.Server, hs *http.S
 			gs,
 			hs,
 		),
-		kratos.Registrar(r),
+		kratos.Registrar(r), // 服务注册
 	)
 }
 
