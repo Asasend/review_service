@@ -79,6 +79,17 @@ func (m *CreateReviewRequest) validate(all bool) error {
 		errors = append(errors, err)
 	}
 
+	if m.GetStoreID() <= 0 {
+		err := CreateReviewRequestValidationError{
+			field:  "StoreID",
+			reason: "value must be greater than 0",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
 	if _, ok := _CreateReviewRequest_Score_InLookup[m.GetScore()]; !ok {
 		err := CreateReviewRequestValidationError{
 			field:  "Score",
@@ -143,7 +154,7 @@ type CreateReviewRequestMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m CreateReviewRequestMultiError) Error() string {
-	msgs := make([]string, 0, len(m))
+	var msgs []string
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -271,7 +282,7 @@ type CreateReviewReplyMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m CreateReviewReplyMultiError) Error() string {
-	msgs := make([]string, 0, len(m))
+	var msgs []string
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -384,7 +395,7 @@ type GetReviewRequestMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m GetReviewRequestMultiError) Error() string {
-	msgs := make([]string, 0, len(m))
+	var msgs []string
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -513,7 +524,7 @@ type GetReviewReplyMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m GetReviewReplyMultiError) Error() string {
-	msgs := make([]string, 0, len(m))
+	var msgs []string
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -632,7 +643,7 @@ type ReviewInfoMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m ReviewInfoMultiError) Error() string {
-	msgs := make([]string, 0, len(m))
+	var msgs []string
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -780,7 +791,7 @@ type AuditReviewRequestMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m AuditReviewRequestMultiError) Error() string {
-	msgs := make([]string, 0, len(m))
+	var msgs []string
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -886,7 +897,7 @@ type AuditReviewReplyMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m AuditReviewReplyMultiError) Error() string {
-	msgs := make([]string, 0, len(m))
+	var msgs []string
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -1023,7 +1034,7 @@ type ReplyReviewRequestMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m ReplyReviewRequestMultiError) Error() string {
-	msgs := make([]string, 0, len(m))
+	var msgs []string
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -1127,7 +1138,7 @@ type ReplyReviewReplyMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m ReplyReviewReplyMultiError) Error() string {
-	msgs := make([]string, 0, len(m))
+	var msgs []string
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -1275,7 +1286,7 @@ type AppealReviewRequestMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m AppealReviewRequestMultiError) Error() string {
-	msgs := make([]string, 0, len(m))
+	var msgs []string
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -1379,7 +1390,7 @@ type AppealReviewReplyMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m AppealReviewReplyMultiError) Error() string {
-	msgs := make([]string, 0, len(m))
+	var msgs []string
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -1478,6 +1489,17 @@ func (m *AuditAppealRequest) validate(all bool) error {
 		errors = append(errors, err)
 	}
 
+	if m.GetReviewID() <= 0 {
+		err := AuditAppealRequestValidationError{
+			field:  "ReviewID",
+			reason: "value must be greater than 0",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
 	if m.GetStatus() <= 0 {
 		err := AuditAppealRequestValidationError{
 			field:  "Status",
@@ -1518,7 +1540,7 @@ type AuditAppealRequestMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m AuditAppealRequestMultiError) Error() string {
-	msgs := make([]string, 0, len(m))
+	var msgs []string
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -1606,8 +1628,6 @@ func (m *AuditAppealReply) validate(all bool) error {
 
 	var errors []error
 
-	// no validation rules for AppealID
-
 	if len(errors) > 0 {
 		return AuditAppealReplyMultiError(errors)
 	}
@@ -1622,7 +1642,7 @@ type AuditAppealReplyMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m AuditAppealReplyMultiError) Error() string {
-	msgs := make([]string, 0, len(m))
+	var msgs []string
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -1719,6 +1739,28 @@ func (m *ListReviewByUserIDRequest) validate(all bool) error {
 		errors = append(errors, err)
 	}
 
+	if m.GetPage() <= 0 {
+		err := ListReviewByUserIDRequestValidationError{
+			field:  "Page",
+			reason: "value must be greater than 0",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if m.GetSize() <= 0 {
+		err := ListReviewByUserIDRequestValidationError{
+			field:  "Size",
+			reason: "value must be greater than 0",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
 	if len(errors) > 0 {
 		return ListReviewByUserIDRequestMultiError(errors)
 	}
@@ -1733,7 +1775,7 @@ type ListReviewByUserIDRequestMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m ListReviewByUserIDRequestMultiError) Error() string {
-	msgs := make([]string, 0, len(m))
+	var msgs []string
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -1869,7 +1911,7 @@ type ListReviewByUserIDReplyMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m ListReviewByUserIDReplyMultiError) Error() string {
-	msgs := make([]string, 0, len(m))
+	var msgs []string
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}

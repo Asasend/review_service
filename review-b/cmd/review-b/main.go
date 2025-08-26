@@ -20,9 +20,9 @@ import (
 // go build -ldflags "-X main.Version=x.y.z"
 var (
 	// Name is the name of the compiled software.
-	Name string
+	Name = "review.service.business" // 添加服务名称
 	// Version is the version of the compiled software.
-	Version string
+	Version = "v1.0.0" // 添加版本号
 	// flagconf is the config flag.
 	flagconf string
 
@@ -74,7 +74,7 @@ func main() {
 		panic(err)
 	}
 
-	app, cleanup, err := wireApp(bc.Server, bc.Data, logger)
+	app, cleanup, err := wireApp(bc.Server, bc.Registry, bc.Data, logger)
 	if err != nil {
 		panic(err)
 	}
