@@ -137,15 +137,3 @@ wire@latest
 # 生成依赖注入代码
 cd cmd/review-service && wire
 ```
-## 贡献指南
-1. Fork 本仓库
-2. 创建特性分支 ( git checkout -b feature/AmazingFeature )
-3. 提交更改 ( git commit -m 'Add some AmazingFeature' )
-4. 推送到分支 ( git push origin feature/AmazingFeature )
-5. 打开 Pull Request
-## 许可证
-本项目基于 MIT 许可证开源 - 查看 LICENSE 文件了解详情。
-
-- 提交 Issue
-- 发送邮件至项目维护者
-⭐ 如果这个项目对你有帮助，请给个 Star 支持一下！
