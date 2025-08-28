@@ -119,7 +119,7 @@ type AuditReviewRequestMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m AuditReviewRequestMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -221,7 +221,7 @@ type AuditReviewReplyMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m AuditReviewReplyMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -318,6 +318,17 @@ func (m *AuditAppealRequest) validate(all bool) error {
 		errors = append(errors, err)
 	}
 
+	if m.GetReviewID() <= 0 {
+		err := AuditAppealRequestValidationError{
+			field:  "ReviewID",
+			reason: "value must be greater than 0",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
 	if m.GetStatus() <= 0 {
 		err := AuditAppealRequestValidationError{
 			field:  "Status",
@@ -332,6 +343,17 @@ func (m *AuditAppealRequest) validate(all bool) error {
 	if utf8.RuneCountInString(m.GetOpUser()) < 2 {
 		err := AuditAppealRequestValidationError{
 			field:  "OpUser",
+			reason: "value length must be at least 2 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if utf8.RuneCountInString(m.GetOpReason()) < 2 {
+		err := AuditAppealRequestValidationError{
+			field:  "OpReason",
 			reason: "value length must be at least 2 runes",
 		}
 		if !all {
@@ -358,7 +380,7 @@ type AuditAppealRequestMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m AuditAppealRequestMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -460,7 +482,7 @@ type AuditAppealReplyMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m AuditAppealReplyMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}

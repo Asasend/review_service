@@ -5,7 +5,7 @@ VERSION=$(shell git describe --tags --always)
 ifeq ($(GOHOSTOS), windows)
 	# 直接指定 proto 文件路径，避免 find 命令问题
 	INTERNAL_PROTO_FILES=internal/conf/conf.proto
-	API_PROTO_FILES=$(shell powershell -Command "Get-ChildItem -Path api -Recurse -Filter *.proto | ForEach-Object { $$_.FullName.Replace('$(shell pwd)\', '').Replace('\', '/') }")
+	API_PROTO_FILES=api/business/v1/business.proto api/operation/v1/operation.proto api/review/v1/review.proto api/review/v1/review_error.proto
 else
 	INTERNAL_PROTO_FILES=$(shell find internal -name *.proto)
 	API_PROTO_FILES=$(shell find api -name *.proto)
@@ -62,9 +62,10 @@ generate:
 .PHONY: all
 # generate all
 all:
-	make api;
-	make config;
-	make generate;
+	make api
+	make config
+	make validate
+	make generate
 
 # show help
 help:

@@ -31,6 +31,7 @@ func (s *ReviewService) CreateReview(ctx context.Context, req *pb.CreateReviewRe
 	review, err := s.uc.CreateReview(ctx, &model.ReviewInfo{
 		UserID:       req.UserID,
 		OrderID:      req.OrderID,
+		StoreID:      req.StoreID,
 		Score:        req.Score,
 		ServiceScore: req.Score,
 		ExpressScore: req.ExpressScore,
@@ -100,11 +101,55 @@ func (s *ReviewService) ReplyReview(ctx context.Context, req *pb.ReplyReviewRequ
 	return &pb.ReplyReviewReply{ReplyID: reply.ReplyID}, nil
 }
 func (s *ReviewService) AppealReview(ctx context.Context, req *pb.AppealReviewRequest) (*pb.AppealReviewReply, error) {
-	return &pb.AppealReviewReply{}, nil
+	fmt.Printf("[service] AppealReview req:%#v\n", req)
+	ret, err := s.uc.AppealReview(ctx, &biz.AppealParam{
+		ReviewID:  req.GetReviewID(),
+		StoreID:   req.GetStoreID(),
+		Reason:    req.GetReason(),
+		Content:   req.GetContent(),
+		PicInfo:   req.GetPicInfo(),
+		VideoInfo: req.GetVideoInfo(),
+	})
+	if err != nil {
+		return nil, err
+	}
+	fmt.Printf("[service] AppealReview ret:%v err:%v\n", ret, err)
+	return &pb.AppealReviewReply{AppealID: ret.AppealID}, nil
 }
 func (s *ReviewService) AuditAppeal(ctx context.Context, req *pb.AuditAppealRequest) (*pb.AuditAppealReply, error) {
+	fmt.Printf("[service] AuditAppeal req:%#v\n", req)
+	err := s.uc.AuditAppeal(ctx, &biz.AuditAppealParam{
+		ReviewID: req.GetReviewID(),
+		AppealID: req.GetAppealID(),
+		OpUser:   req.GetOpUser(),
+		OpReason: req.GetOpReason(), // 添加这一行
+		Status:   req.GetStatus(),
+	})
+	if err != nil {
+		return nil, err
+	}
 	return &pb.AuditAppealReply{}, nil
 }
 func (s *ReviewService) ListReviewByUserID(ctx context.Context, req *pb.ListReviewByUserIDRequest) (*pb.ListReviewByUserIDReply, error) {
-	return &pb.ListReviewByUserIDReply{}, nil
+	fmt.Printf("[service] ListReviewByUserID req:%#v\n", req)
+	dataList, err := s.uc.ListReviewByUserID(ctx, req.GetUserID(), int(req.GetPage()), int(req.GetSize()))
+	if err != nil {
+		return nil, err
+	}
+	list := make([]*pb.ReviewInfo, 0, len(dataList))
+	for _, review := range dataList {
+		list = append(list, &pb.ReviewInfo{
+			ReviewID:     review.ReviewID,
+			UserID:       review.UserID,
+			OrderID:      review.OrderID,
+			Score:        review.Score,
+			ServiceScore: review.ServiceScore,
+			ExpressScore: review.ExpressScore,
+			Content:      review.Content,
+			PicInfo:      review.PicInfo,
+			VideoInfo:    review.VideoInfo,
+			Status:       review.Status,
+		})
+	}
+	return &pb.ListReviewByUserIDReply{List: list}, nil
 }
