@@ -215,7 +215,7 @@ func (r *reviewRepo) ListReviewByUserID(ctx context.Context, userID int64, offse
 }
 
 // ListReviewByStoreID 根据storeID 分页查询评价
-func (r *reviewRepo) ListReviewByStoreID(ctx context.Context, storeID int64, offset, limit int) ([]*model.ReviewInfo, error) {
+func (r *reviewRepo) ListReviewByStoreID(ctx context.Context, storeID int64, offset, limit int) ([]*biz.MyReviewInfo, error) {
 	fmt.Printf("==> ListReviewByStoreID called with storeID: %d, offset: %d, limit: %d\n", storeID, offset, limit)
 
 	if r.data == nil {
@@ -250,7 +250,17 @@ func (r *reviewRepo) ListReviewByStoreID(ctx context.Context, storeID int64, off
 	}
 
 	fmt.Printf("es result total:%v\n", resp.Hits.Total.Value)
-	b, _ := json.Marshal(resp.Hits)
-	fmt.Printf("es result hits:%s\n", b)
-	return nil, nil
+	// 反序列化数据
+	// resp.Hits.Hits[0].Source_(json.RawMessage) ==> model.ReviewInf
+	list := make([]*biz.MyReviewInfo, 0, resp.Hits.Total.Value)
+	for _, hit := range resp.Hits.Hits {
+		tmp := &biz.MyReviewInfo{}
+		if err := json.Unmarshal(hit.Source_, tmp); err != nil {
+			r.log.Errorf("json.Unmarshal(hit.Source_, tmp) failed, err : %v", err)
+			continue
+		}
+		list = append(list, tmp)
+	}
+
+	return list, nil
 }
