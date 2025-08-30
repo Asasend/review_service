@@ -24,6 +24,7 @@ func NewOperationRepo(data *Data, logger log.Logger) biz.OperationRepo {
 
 func (r *operationRepo) AuditReview(ctx context.Context, param *biz.AuditReviewParam) error {
 	r.log.WithContext(ctx).Infof("AuditReview, param:%v", param)
+	// 调用 review-service 的 gRPC 接口
 	ret, err := r.data.rc.AuditReview(ctx, &reviewv1.AuditReviewRequest{
 		ReviewID:  param.ReviewID,
 		Status:    int32(param.Status),

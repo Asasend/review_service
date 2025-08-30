@@ -2,13 +2,12 @@ package job
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
-	"fmt"
-	"log"
-	"strconv"
-	"time"
+	"review-job/internal/conf"
 
 	"github.com/elastic/go-elasticsearch/v8"
+	"github.com/go-kratos/kratos/v2/log"
 	"github.com/segmentio/kafka-go"
 )
 
@@ -16,14 +15,56 @@ import (
 
 // JobWorker 自定义执行job的结构体，实现 transport.Server
 type JobWorker struct {
-	kafkaReader *kafka.Reader              // kafka reader
-	ESClient    *elasticsearch.TypedClient // ES Client
+	kafkaReader *kafka.Reader // kafka reader
+	esClient    *ESClient     // ES Client
 	log         *log.Helper
 }
 
 type ESClient struct {
 	*elasticsearch.TypedClient
-	Index string
+	index string
+}
+
+func NewJobWorker(kafkaReader *kafka.Reader, esClient *ESClient, logger log.Logger) *JobWorker {
+	return &JobWorker{
+		kafkaReader: kafkaReader,
+		esClient:    esClient,
+		log:         log.NewHelper(logger),
+	}
+}
+
+func NewKafkaReader(cfg *conf.Kafka) *kafka.Reader {
+	return kafka.NewReader(kafka.ReaderConfig{
+		Brokers: cfg.Brokers,
+		GroupID: cfg.GroupId, // 指定消费者组id
+		Topic:   cfg.Topic,
+	})
+}
+
+func NewESClient(cfg *conf.Elasticsearch) (*ESClient, error) {
+	// ES 配置
+	c := elasticsearch.Config{
+		Addresses: cfg.Addresses,
+	}
+
+	// 创建客户端连接
+	client, err := elasticsearch.NewTypedClient(c)
+	if err != nil {
+		return nil, err
+	}
+	return &ESClient{
+		TypedClient: client,
+		index:       cfg.Index,
+	}, nil
+}
+
+// 定义kafka中接收到的数据
+type Msg struct {
+	Type     string `json:"type"`
+	Database string `json:"database"`
+	Table    string `json:"table"`
+	IsDdl    bool   `json:isDdl`
+	Data     []map[string]interface{}
 }
 
 // Start kratos程序启动之后会调用的方法
@@ -44,7 +85,27 @@ func (jw JobWorker) Start(ctx context.Context) error {
 		}
 		jw.log.Debug("message at topic/partition/offset %v/%v/%v: %s = %s\n", m.Topic, m.Partition, m.Offset, string(m.Key), string(m.Value))
 		// 2. 将完整的评价数据写入es
+		msg := new(Msg)
+		if err := json.Unmarshal(m.Value, msg); err != nil {
+			jw.log.Errorf("unmarshal msg from kafka failed, err:%v", err)
+			continue
+		}
 
+		// 补充
+		// 实际的业务场景可能需要在这个增加一个步骤：对数据做业务处理
+		// 例如：把两张表的数据合成一个文档写入ES
+
+		if msg.Type == "INSERT" {
+			// 往ES中新增文档
+			for idx := range msg.Data {
+				jw.indexDocument(msg.Data[idx])
+			}
+		} else {
+			// 往ES中更新文档
+			for idx := range msg.Data {
+				jw.updateDocument(msg.Data[idx])
+			}
+		}
 	}
 
 	return nil
@@ -57,99 +118,30 @@ func (jw JobWorker) Stop(context.Context) error {
 	return jw.kafkaReader.Close()
 }
 
-func readFromKafka() {
-	// 创建一个reader，指定GroupID，从 topic-A 消费消息
-	r := kafka.NewReader(kafka.ReaderConfig{
-		Brokers:  []string{"localhost:9092", "localhost:9093", "localhost:9094"},
-		GroupID:  "consumer-group-id", // 指定消费者组id
-		Topic:    "topic-A",
-		MaxBytes: 10e6, // 10MB
-	})
-
-	// 接收消息
-	for {
-		m, err := r.ReadMessage(context.Background())
-		if err != nil {
-			break
-		}
-		fmt.Printf("message at topic/partition/offset %v/%v/%v: %s = %s\n", m.Topic, m.Partition, m.Offset, string(m.Key), string(m.Value))
-	}
-
-	// 程序退出前关闭Reader
-	if err := r.Close(); err != nil {
-		log.Fatal("failed to close reader:", err)
-	}
-
-}
-
-func connES() {
-	// ES 配置
-	cfg := elasticsearch.Config{
-		Addresses: []string{
-			"http://localhost:9200",
-		},
-	}
-
-	// 创建客户端连接
-	client, err := elasticsearch.NewTypedClient(cfg)
-	if err != nil {
-		fmt.Printf("elasticsearch.NewTypedClient failed, err:%v\n", err)
-		return
-	}
-
-}
-
 // indexDocument 索引文档
-func indexDocument(client *elasticsearch.TypedClient) {
-	// 定义 document 结构体对象
-	d1 := Review{
-		ID:      1,
-		UserID:  147982601,
-		Score:   5,
-		Content: "这是一个好评！",
-		Tags: []Tag{
-			{1000, "好评"},
-			{1100, "物超所值"},
-			{9000, "有图"},
-		},
-		Status:      2,
-		PublishTime: time.Now(),
-	}
-
+func (jw JobWorker) indexDocument(d map[string]interface{}) {
+	reviewID := d["review_id"].(string)
 	// 添加文档
-	resp, err := client.Index("my-review-1").
-		Id(strconv.FormatInt(d1.ID, 10)).
-		Document(d1).
+	resp, err := jw.esClient.Index(jw.esClient.index).
+		Id(reviewID).
+		Document(d).
 		Do(context.Background())
 	if err != nil {
-		fmt.Printf("indexing document failed, err:%v\n", err)
+		jw.log.Errorf("indexing document failed, err:%v\n", err)
 		return
 	}
-	fmt.Printf("result:%#v\n", resp.Result)
+	jw.log.Debugf("result:%#v\n", resp.Result)
 }
 
 // updateDocument 更新文档
-func updateDocument(client *elasticsearch.TypedClient) {
-	// 修改后的结构体变量
-	d1 := Review{
-		ID:      1,
-		UserID:  147982601,
-		Score:   5,
-		Content: "这是一个修改后的好评！", // 有修改
-		Tags: []Tag{ // 有修改
-			{1000, "好评"},
-			{9000, "有图"},
-		},
-		Status:      2,
-		PublishTime: time.Now(),
-	}
-
-	resp, err := client.Update("my-review-1", "1").
-		Doc(d1). // 使用结构体变量更新
+func (jw JobWorker) updateDocument(d map[string]interface{}) {
+	reviewID := d["review_id"].(string)
+	resp, err := jw.esClient.Update(jw.esClient.index, reviewID).
+		Doc(d). // 使用结构体变量更新
 		Do(context.Background())
 	if err != nil {
-		fmt.Printf("update document failed, err:%v\n", err)
+		jw.log.Errorf("update document failed, err:%v\n", err)
 		return
 	}
-	fmt.Printf("result:%v\n", resp.Result)
+	jw.log.Debugf("result%v\n", resp.Result)
 }

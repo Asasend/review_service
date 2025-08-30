@@ -69,6 +69,7 @@ func (s *ReviewService) GetReview(ctx context.Context, req *pb.GetReviewRequest)
 func (s *ReviewService) AuditReview(ctx context.Context, req *pb.AuditReviewRequest) (*pb.AuditReviewReply, error) {
 	fmt.Printf("AuditReview req:%#v\n", req)
 	err := s.uc.AuditReview(ctx, &biz.AuditParam{
+		// 第一次转换：gRPC请求 → 业务层参数
 		ReviewID:  req.GetReviewID(),
 		OpUser:    req.GetOpUser(),
 		OpReason:  req.GetOpReason(),
@@ -78,6 +79,7 @@ func (s *ReviewService) AuditReview(ctx context.Context, req *pb.AuditReviewRequ
 	if err != nil {
 		return nil, err
 	}
+	// 第二次转换：构造gRPC响应
 	return &pb.AuditReviewReply{
 		ReviewID: req.ReviewID,
 		Status:   req.Status,

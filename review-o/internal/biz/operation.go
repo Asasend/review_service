@@ -38,16 +38,18 @@ type OperationUsecase struct {
 	log  *log.Helper
 }
 
-// NewGreeterUsecase new a Greeter usecase.
+// NewOperationUsecase new a Operation usecase.
 func NewOperationUsecase(repo OperationRepo, logger log.Logger) *OperationUsecase {
 	return &OperationUsecase{repo: repo, log: log.NewHelper(logger)}
 }
 
+// 审核评价
 func (uc *OperationUsecase) AuditReview(ctx context.Context, param *AuditReviewParam) error {
 	uc.log.WithContext(ctx).Infof("AuditReview，param:%v", param)
 	return uc.repo.AuditReview(ctx, param)
 }
 
+// 审核申诉
 func (uc *OperationUsecase) AuditAppeal(ctx context.Context, param *AuditAppealParam) error {
 	uc.log.WithContext(ctx).Infof("AuditAppeal,param:%v", param)
 	return uc.repo.AuditAppeal(ctx, param)

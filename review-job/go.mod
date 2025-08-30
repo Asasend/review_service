@@ -6,7 +6,7 @@ toolchain go1.24.0
 
 require (
 	github.com/elastic/go-elasticsearch/v8 v8.19.0
-	github.com/go-kratos/kratos/v2 v2.8.0
+	github.com/go-kratos/kratos/v2 v2.8.4
 	github.com/google/wire v0.6.0
 	github.com/segmentio/kafka-go v0.4.49
 	go.uber.org/automaxprocs v1.5.1

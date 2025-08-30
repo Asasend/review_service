@@ -52,6 +52,7 @@ func NewReviewServiceClient(d registry.Discovery) v1.ReviewClient {
 	conn, err := grpc.DialInsecure(
 		context.Background(),
 		//grpc.WithEndpoint("127.0.0.1:9092"),
+		// 关键：通过服务名连接
 		grpc.WithEndpoint("discovery:///review.service"),
 		grpc.WithDiscovery(d),
 		grpc.WithMiddleware(

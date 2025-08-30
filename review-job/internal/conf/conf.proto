@@ -50,6 +50,6 @@ message Kafka {
 
 message Elasticsearch {
   repeated string addresses = 1;
-  string topic = 2;
+  string index = 2;
 }
 
