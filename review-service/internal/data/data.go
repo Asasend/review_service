@@ -9,13 +9,14 @@ import (
 	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/google/wire"
+	"github.com/redis/go-redis/v9"
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
 
 // ProviderSet is data providers.
-var ProviderSet = wire.NewSet(NewData, NewReviewRepo, NewDB, NewESClient)
+var ProviderSet = wire.NewSet(NewData, NewReviewRepo, NewDB, NewESClient, NewRedisClient)
 
 // Data .
 type Data struct {
@@ -24,17 +25,18 @@ type Data struct {
 	query *query.Query
 	log   *log.Helper
 	es    *elasticsearch.TypedClient // es/v8 "github.com/elastic/go-elasticsearch/v8"
+	rdb   *redis.Client
 }
 
 // NewData .
-func NewData(db *gorm.DB, esClient *elasticsearch.TypedClient, logger log.Logger) (*Data, func(), error) {
+func NewData(db *gorm.DB, esClient *elasticsearch.TypedClient, rdb *redis.Client, logger log.Logger) (*Data, func(), error) {
 	cleanup := func() {
 		log.NewHelper(logger).Info("closing the data resources")
 	}
 	// 非常重要!为GEN生成的query代码设置数据库连接对象
 	query.SetDefault(db)
 
-	return &Data{query: query.Q, es: esClient, log: log.NewHelper(logger)}, cleanup, nil
+	return &Data{query: query.Q, es: esClient, rdb: rdb, log: log.NewHelper(logger)}, cleanup, nil
 }
 
 // NewESClient ES Client 的构造函数
@@ -56,4 +58,12 @@ func NewDB(cfg *conf.Data) (*gorm.DB, error) {
 		return gorm.Open(sqlite.Open(cfg.Database.GetSource()))
 	}
 	return nil, errors.New("connect db fail unsupported db driver")
+}
+
+func NewRedisClient(cfg *conf.Data) *redis.Client {
+	return redis.NewClient(&redis.Options{
+		Addr:         cfg.Redis.Addr,
+		WriteTimeout: cfg.Redis.ReadTimeout.AsDuration(),
+		ReadTimeout:  cfg.Redis.ReadTimeout.AsDuration(),
+	})
 }
