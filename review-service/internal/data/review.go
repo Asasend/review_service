@@ -2,7 +2,9 @@ package data
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"review-service/internal/biz"
 	"review-service/internal/data/model"
 	"review-service/internal/data/query"
@@ -11,6 +13,8 @@ import (
 	"github.com/go-kratos/kratos/v2/log"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+
+	"github.com/elastic/go-elasticsearch/v8/typedapi/types"
 )
 
 type reviewRepo struct {
@@ -208,4 +212,45 @@ func (r *reviewRepo) ListReviewByUserID(ctx context.Context, userID int64, offse
 		Limit(limit).
 		Offset(offset).
 		Find()
+}
+
+// ListReviewByStoreID 根据storeID 分页查询评价
+func (r *reviewRepo) ListReviewByStoreID(ctx context.Context, storeID int64, offset, limit int) ([]*model.ReviewInfo, error) {
+	fmt.Printf("==> ListReviewByStoreID called with storeID: %d, offset: %d, limit: %d\n", storeID, offset, limit)
+
+	if r.data == nil {
+		fmt.Printf("ERROR: data is nil\n")
+		return nil, errors.New("data is nil")
+	}
+	if r.data.es == nil {
+		fmt.Printf("ERROR: elasticsearch client is nil\n")
+		return nil, errors.New("elasticsearch client is nil")
+	}
+
+	fmt.Printf("==> About to execute ES query\n")
+	resp, err := r.data.es.Search().
+		Index("review").
+		From(offset).
+		Size(limit).
+		Query(&types.Query{
+			Bool: &types.BoolQuery{
+				Filter: []types.Query{
+					{
+						Term: map[string]types.TermQuery{
+							"store_id": {Value: storeID},
+						},
+					},
+				},
+			},
+		}).
+		Do(ctx)
+	fmt.Printf("--> es search %v %v\n", resp, err)
+	if err != nil {
+		return nil, err
+	}
+
+	fmt.Printf("es result total:%v\n", resp.Hits.Total.Value)
+	b, _ := json.Marshal(resp.Hits)
+	fmt.Printf("es result hits:%s\n", b)
+	return nil, nil
 }
